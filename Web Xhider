@@ -1,0 +1,1008 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Storage Visual | Xhider</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --bg: #09090b; --card-bg: #18181b; --border: #27272a; --text-main: #e4e4e7; --text-sub: #a1a1aa; --primary: #3b82f6; --primary-hover: #2563eb; --green: #22c55e; --red: #ef4444; --purple: #a855f7; --yellow: #eab308; --input-bg: #000; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        body { background-color: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; padding-top: 80px; padding-bottom: 50px; font-size: 14px; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .navbar { position: fixed; top: 0; left: 0; right: 0; height: 64px; background: rgba(9, 9, 11, 0.8); border-bottom: 1px solid var(--border); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 100; transition: all 0.3s; }
+        .hamburger-btn { font-size: 20px; color: var(--text-main); cursor: pointer; padding: 10px; border-radius: 8px; transition: 0.2s; }
+        .hamburger-btn:hover { background: rgba(255,255,255,0.1); }
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 998; display: none; opacity: 0; transition: opacity 0.3s; }
+        .sidebar-overlay.active { display: block; opacity: 1; }
+        .sidebar { position: fixed; top: 0; left: -280px; width: 260px; height: 100vh; background: #121214; border-right: 1px solid var(--border); z-index: 999; transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        .sidebar.active { left: 0; }
+        .sidebar-header { height: 64px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid var(--border); }
+        .logo-text { font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .sidebar-menu { padding: 20px 15px; display: flex; flex-direction: column; gap: 5px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--text-sub); text-decoration: none; border-radius: 8px; font-weight: 500; transition: 0.2s; }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+        .nav-item.active { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
+        .nav-item i { width: 20px; text-align: center; }
+
+        .link-btn { cursor: pointer; color: var(--primary); font-weight: 600; transition: color 0.2s; }
+        .link-btn:hover { color: var(--primary-hover); }
+        .logout-btn { color: var(--red); text-decoration: none; margin-left: 5px; cursor: pointer; opacity: 0.8; transition: opacity 0.2s; }
+        .logout-btn:hover { opacity: 1; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 15px; animation: fadeIn 0.6s ease-out; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 24px; overflow: hidden; box-shadow: var(--shadow); transition: transform 0.3s, box-shadow 0.3s; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.01); }
+        .card-title { font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+        .card-body { padding: 20px; }
+        .toolbar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        input, textarea, select { background: var(--input-bg); border: 1px solid var(--border); color: var(--text-main); padding: 12px; border-radius: 8px; outline: none; width: 100%; box-sizing: border-box; font-size: 14px; transition: border-color 0.2s, box-shadow 0.2s; }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        textarea { height: 350px; font-family: 'JetBrains Mono', monospace; line-height: 1.6; resize: vertical; font-size: 13px; }
+        .styled-select-wrapper { position: relative; width: 100%; }
+        .styled-select-wrapper select { padding-right: 35px; cursor: pointer; appearance: none; -webkit-appearance: none; }
+        .styled-select-wrapper::after { content: '▼'; font-size: 10px; color: var(--text-sub); position: absolute; right: 15px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+        .privacy-toggle { display: flex; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 4px; height: 44px; box-sizing: border-box; }
+        .toggle-option { flex: 1; text-align: center; cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--text-sub); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        input[type="radio"] { display: none; }
+        #priv_public:checked ~ .privacy-toggle label[for="priv_public"] { background: var(--primary); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        #priv_private:checked ~ .privacy-toggle label[for="priv_private"] { background: var(--purple); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .btn { padding: 12px 20px; border-radius: 8px; font-weight: 600; border: none; color: white; cursor: pointer; width: 100%; height: 44px; font-size: 14px; transition: transform 0.1s, background 0.2s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39); }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.23); }
+        .btn-danger { background: var(--red); box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39); }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-secondary { background: var(--border); color: var(--text-main); }
+        .btn-secondary:hover { background: #3f3f46; }
+        .btn-icon { background: rgba(255,255,255,0.05); color: var(--text-sub); width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all 0.2s; }
+        .btn-icon:hover { color: #fff; background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.1); transform: translateY(-1px); }
+        .table-responsive { width: 100%; } 
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 16px 20px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; transition: background 0.2s; }
+        th { color: var(--text-sub); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; background: rgba(0,0,0,0.2); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        .col-icon { width: 40px; text-align: center; font-size: 18px; color: var(--text-sub); }
+        .col-name { font-weight: 500; }
+        .col-size { color: var(--text-sub); font-size: 13px; font-family: 'JetBrains Mono'; }
+        .col-views { width: 80px; color: var(--text-sub); font-size: 13px; text-align: center; }
+        .folder-link { color: var(--text-main); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 10px; transition: color 0.2s; }
+        .folder-link:hover { color: var(--primary); }
+        .fa-folder { color: var(--yellow); filter: drop-shadow(0 2px 4px rgba(234, 179, 8, 0.2)); }
+        .fa-file-code { color: var(--primary); }
+        .breadcrumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-sub); padding: 5px 0 20px 0; overflow-x: auto; white-space: nowrap; }
+        .breadcrumb-item { color: var(--text-sub); text-decoration: none; padding: 4px 8px; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; gap: 5px; }
+        .breadcrumb-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+        .breadcrumb-item.active { background: rgba(255,255,255,0.1); color: var(--text-main); font-weight: 600; pointer-events: none; }
+        .breadcrumb-sep { color: var(--border); font-size: 10px; }
+        .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .sort-btn { font-size: 12px; padding: 6px 12px; background: transparent; border: 1px solid var(--border); color: var(--text-sub); border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .sort-btn:hover { border-color: var(--text-sub); color: var(--text-main); }
+        .sort-btn.active { background: var(--border); color: var(--text-main); border-color: var(--text-sub); font-weight: 600; }
+        .countdown { font-family: 'JetBrains Mono'; font-size: 12px; color: #eab308; background: rgba(234, 179, 8, 0.1); padding: 3px 8px; border-radius: 4px; display: inline-block; min-width: 65px; text-align: center; border: 1px solid rgba(234, 179, 8, 0.2);}
+        .perm { color: var(--green); font-size: 12px; font-weight: 600; background: rgba(34, 197, 94, 0.1); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .status-badge { font-size: 12px; padding: 3px 8px; border-radius: 4px; font-weight: 500; }
+        .status-public { color: #60a5fa; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); }
+        .status-private { color: #c084fc; background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.2); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 200; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;}
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-box { background: var(--card-bg); width: 90%; max-width: 400px; padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); max-height: 85vh; overflow-y: auto; }
+        .modal-overlay.active .modal-box { transform: scale(1); }
+        .modal-title { margin: 0 0 16px 0; text-align: center; font-size: 20px; font-weight: 700; color: var(--text-main); }
+        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 14px; border: 1px solid transparent; animation: scaleIn 0.3s ease; display: none; }
+        .alert.active { display: block; }
+        .alert.success { background: rgba(34, 197, 94, 0.1); color: var(--green); border-color: rgba(34, 197, 94, 0.2); }
+        .alert.error { background: rgba(239, 68, 68, 0.1); color: var(--red); border-color: rgba(239, 68, 68, 0.2); }
+        .code-container { margin-top: 15px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #0e0e11; }
+        .code-header { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-sub); font-weight: 600; }
+        .code-content { padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a1a1aa; overflow-x: auto; white-space: pre; margin: 0; line-height: 1.5; }
+        .switch { position: relative; display: inline-block; width: 36px; height: 20px; margin-right: 10px; vertical-align: middle; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3f3f46; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--green); }
+        input:checked + .slider.blue { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(16px); }
+        .help-list { list-style: none; padding: 0; margin: 0; }
+        .help-list li { margin-bottom: 15px; display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.5; color: var(--text-sub); }
+        .help-list li i { color: var(--primary); margin-top: 4px; flex-shrink: 0; }
+        .help-list strong { color: var(--text-main); }
+        .benefit-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 20px; }
+        .benefit-title { font-weight: 600; color: var(--green); font-size: 13px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .guest-limit-box { width: 120px; display: flex; flex-direction: column; justify-content: center; gap: 2px; flex-shrink: 0; }
+        .guest-limit-bar-bg { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+        .guest-limit-bar { height: 100%; background: var(--green); transition: width 0.3s; }
+        .guest-limit-text { font-size: 10px; color: var(--text-sub); text-align: left; font-weight: 600; line-height: 1; margin-bottom: 2px; }
+
+        .action-group { display: flex; gap: 8px; flex: 0 0 auto; align-items: center; }
+
+        @media (max-width: 768px) {
+            .navbar { padding: 0 15px; }
+            .toolbar { display: flex; flex-wrap: wrap; gap: 10px; }
+            .toolbar > div:first-child { flex: 1 1 100% !important; min-width: 100%; }
+            .toolbar > div:nth-child(2), .toolbar > div:nth-child(3) { flex: 1; min-width: 45%; }
+            .action-group { width: 100%; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; margin-top: 5px; }
+            .action-group .btn { flex: 1; width: auto; padding: 0 5px; font-size: 13px; white-space: nowrap; }
+            .container { padding: 0 10px; }
+            .card-header { padding: 12px 15px; }
+            .card-body { padding: 15px; }
+            .modal-box { width: 95%; padding: 20px; }
+            .table-responsive { overflow-x: hidden; border: none; }
+            table, thead, tbody, th, td, tr { display: block; width: 100%; box-sizing: border-box; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; background: rgba(255,255,255,0.02); padding: 12px; position: relative; }
+            td { border: none; padding: 2px 0; position: relative; }
+            .col-icon { position: absolute; top: 12px; left: 12px; width: 24px; font-size: 20px; text-align: left;}
+            .col-name { margin-left: 36px; margin-right: 80px; font-size: 15px; display: block; margin-bottom: 6px; word-break: break-all; line-height: 1.4; }
+            .col-status { display: inline-block; margin-left: 36px; margin-right: 5px; }
+            .col-size { display: inline-block; color: var(--text-sub); font-size: 12px; }
+            .col-views { display: inline-block; margin-left: 36px; font-size: 12px; }
+            .col-views:before { content: "Views: "; color: var(--text-sub); }
+            .col-time { display: block; margin-left: 36px; margin-top: 6px; font-size: 11px; color: var(--text-sub); }
+            .col-link, .col-action { display: inline-block; margin-top: 12px; margin-left: 0; padding-top: 10px; border-top: 1px dashed var(--border); width: 100%; }
+            .col-link { border-top: none; padding-top: 0; width: auto; margin-right: 10px; margin-left: 36px;}
+            .col-action { width: auto; border: none; padding: 0; margin-top: 10px; float: right; }
+            .folder-action-cell { float: right; margin-top: -7px; border: none; padding: 0; width: auto; display: inline-block; }
+            .mobile-upload-time { position: absolute; top: 14px; right: 12px; font-size: 11px; color: var(--text-sub); font-family: 'Inter', sans-serif; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
+            .mobile-hide { display: none !important; }
+        }
+        @media (min-width: 769px) { .mobile-upload-time { display: none; } }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div class="hamburger-btn" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </div>
+        <span style="font-weight: 600; font-size: 16px;">Storage Visual</span>
+    </div>
+    
+    <div style="display:flex; align-items:center; gap:15px">
+        <span onclick="openModal('help')" style="cursor:pointer; font-size:18px; color:var(--text-sub); transition:0.2s" title="Help">
+            <i class="fas fa-circle-question"></i>
+        </span>
+            </div>
+</nav>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="sidebar" id="mainSidebar">
+    <div class="sidebar-header">
+        <a href="#" class="logo-text"><i class="fas fa-bolt" style="color:var(--primary)"></i> Xhider</a>
+    </div>
+    <div class="sidebar-menu">
+    <a href="/dashboard" class="nav-item">
+        <i class="fas fa-home"></i> Dashboard
+    </a>
+    <a href="/storagevisual" class="nav-item active">
+        <i class="fas fa-server"></i> Storage Visual
+    </a>
+    <a href="/webhook" class="nav-item">
+        <i class="fas fa-shield-alt"></i> Webhook Security
+    </a>
+    <a href="/script" class="nav-item">
+        <i class="fas fa-code"></i> Script Library
+    </a>
+    <a href="/shorten" class="nav-item">
+        <i class="fas fa-link"></i> URL Shortener
+    </a>
+    <a href="/settings" class="nav-item">
+        <i class="fas fa-cog"></i> Settings
+    </a>
+    
+    <div style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 10px;">
+        <a href="https://discord.gg/hATuHQaQRb" target="_blank" class="nav-item">
+            <i class="fab fa-discord"></i> Support Discord
+        </a>
+    </div>
+</div> </div>
+
+<div id="helpModal" class="modal-overlay">
+    <div class="modal-box" style="max-width:500px">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 class="modal-title" style="margin:0;">User Guide</h3>
+            <span onclick="closeModal('help')" style="cursor:pointer; font-size:20px; opacity:0.6">×</span>
+        </div>
+        
+        <div class="benefit-box">
+            <div class="benefit-title"><i class="fas fa-star" style="margin-right:5px"></i> Why Create an Account?</div>
+            <ul style="margin:0; padding-left:20px; color:var(--text-sub); font-size:13px; line-height:1.6">
+                <li><b>Permanent Storage:</b> Guest files expire in 24h. User files last forever.</li>
+                <li><b>Private Mode:</b> Hide your scripts from the public list.</li>
+                <li><b>API Access:</b> Upload/Obfuscate directly from Roblox/Termux.</li>
+                <li><b>No Limits:</b> Unlimited obfuscation (Guests limited to 5/day).</li>
+            </ul>
+        </div>
+
+        <h4 style="margin:0 0 10px 0; font-size:15px">How to Use</h4>
+        <ul class="help-list">
+            <li>
+                <i class="fas fa-upload"></i>
+                <div>
+                    <strong>Upload & Folders:</strong><br>
+                    Enter a filename like <code>MyScript.lua</code>. To create a folder, use slashes: <code>Hubs/V1/Main.lua</code>.
+                </div>
+            </li>
+            <li>
+                <i class="fas fa-magic"></i>
+                <div>
+                    <strong>Obfuscation:</strong><br>
+                    Paste your code, select a preset (e.g., 'Evil' or 'Minify'), and click "Obf". 
+                    <br><small style="color:var(--green)">Now powered by Fast Node.js API.</small>
+                </div>
+            </li>
+            <li>
+                <i class="fas fa-terminal"></i>
+                <div>
+                    <strong>API & Automation:</strong><br>
+                    Click the <i class="fas fa-cog"></i> icon (Settings) after logging in to get your API Token and code examples for Roblox executors.
+                </div>
+            </li>
+            <li>
+                <i class="fas fa-lock"></i>
+                <div>
+                    <strong>Raw Access:</strong><br>
+                    Use the switch in the file list to temporarily disable raw access (useful for maintenance).
+                </div>
+            </li>
+        </ul>
+        
+        </div>
+</div>
+
+<div id="settingsModal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 600px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 class="modal-title" style="margin:0;">API Usage</h3>
+            <span onclick="closeModal('settings')" style="cursor:pointer; font-size:20px; opacity:0.6">×</span>
+        </div>
+        <div id="settingsAlert" class="alert"></div>
+        
+        <p style="font-size:13px; color:var(--text-sub); margin-bottom:8px;">Your Secret API Token</p>
+        <div class="token-display" style="display:flex; gap:8px; margin-bottom:20px;">
+            <input type="text" id="apiTokenInput" value="YOUR_API_TOKEN" readonly="" onclick="copyToClipboard(this)" style="text-align:center; color: var(--green); font-family:'JetBrains Mono'; font-weight:600; letter-spacing:1px;">
+            <form onsubmit="handleGenerateToken(event, this)" style="margin:0;">
+                <input type="hidden" name="action" value="generate_token">
+                <button class="btn btn-primary" style="width:auto; padding: 0 16px;" title="Regenerate"><i class="fas fa-sync-alt"></i></button>
+            </form>
+        </div>
+
+        <div style="border-top: 1px solid var(--border); margin: 20px 0; position:relative; text-align:center">
+            <span style="background:var(--card-bg); padding:0 10px; color:var(--text-sub); font-size:12px; position:relative; top:-10px;">Documentation</span>
+        </div>
+
+        
+        <div class="code-container" style="margin-bottom:15px;">
+            <div class="code-header">
+                <span><i class="fas fa-gamepad"></i> Roblox (Lua)</span>
+                <span class="copy-btn-sm link-btn" onclick="copyCode(this)">Copy</span>
+            </div>
+            <div class="code-content">local url = "https://xhider.xyz/"
+local token = "<span class="token-ph">YOUR_API_TOKEN</span>"
+local response = request({
+    Url = url,
+    Method = "POST",
+    Headers = { ["Content-Type"] = "application/x-www-form-urlencoded" },
+    Body = "action=save&api_token="..token.."&key=Hubs/script.lua&expire=1d&content=print('Hi')"
+})
+print(response.Body) -- JSON: { status, url, expire_at }</div>
+        </div>
+
+        <div class="code-container" style="margin-bottom:15px;">
+            <div class="code-header">
+                <span><i class="fas fa-terminal"></i> Termux / curl Upload</span>
+                <span class="copy-btn-sm link-btn" onclick="copyCode(this)">Copy</span>
+            </div>
+            <div class="code-content">curl -L -X POST "https://xhider.xyz/" \
+     -d "action=save" \
+     -d "api_token=<span class="token-ph">YOUR_API_TOKEN</span>" \
+     -d "key=MyFolder/script.lua" \
+     -d "expire=1d" \
+     -d "content=print('Hello World')"</div>
+            <div style="padding:8px 12px; font-size:11px; color:var(--text-sub); border-top:1px solid var(--border)">
+                * <b>expire</b> — thời gian tự xoá: <code>10m</code> · <code>2h</code> · <code>1d</code> · <code>3d</code> · <code>1w</code> · <code>never</code><br>
+                * Bỏ qua <b>expire</b> hoặc dùng <code>never</code> / <code>0</code> = không bao giờ xoá.<br>
+                * Response trả JSON gồm <code>url</code>, <code>expire_at</code>, <code>size_kb</code>.
+            </div>
+        </div>
+
+        <div class="code-container">
+            <div class="code-header">
+                <span><i class="fas fa-magic"></i> New: Proxy Obfuscation API</span>
+                <span class="copy-btn-sm link-btn" onclick="copyCode(this)">Copy</span>
+            </div>
+            <div class="code-content">curl -L -X POST "https://xhider.xyz/" \
+     -d "action=create_obf" \
+     -d "api_token=<span class="token-ph">YOUR_API_TOKEN</span>" \
+     -d "preset=Evil" \
+     -d "content=print('Test API')" \
+     -d "output=console"</div>
+     <div style="padding:8px 12px; font-size:11px; color:var(--text-sub); border-top:1px solid var(--border)">
+         * This uses your Web Token to call the Node.js bot (localhost:3000).<br>
+         * Set <b>output=Filename.lua</b> to save directly to storage.<br>
+         * Set <b>output=console</b> to print code to screen.
+     </div>
+        </div>
+    </div>
+</div>
+
+<div id="folderRenameModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 class="modal-title">Rename Folder</h3>
+        <input type="text" id="folderNewNameInput" placeholder="Enter new folder name..." style="margin-bottom:0">
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('folderRename')">Cancel</button>
+            <button class="btn btn-primary" id="folderRenameContinueBtn" onclick="submitRenameFolder()">Continue</button>
+        </div>
+    </div>
+</div>
+
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-box">
+        <div style="text-align:center; margin-bottom:15px">
+            <i class="fas fa-exclamation-circle" style="font-size:40px; color:var(--yellow); margin-bottom:15px; opacity:0.8"></i>
+            <h3 class="modal-title" id="confirmTitle">Confirm Action</h3>
+        </div>
+        <p class="modal-text" id="confirmText" style="text-align:center; color:var(--text-sub)">Are you sure you want to proceed?</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal('confirm')">Cancel</button>
+            <button class="btn btn-primary" id="confirmBtnAction">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<form method="POST" id="deleteForm" style="display:none;">
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="key" id="deleteKeyInput">
+    <input type="hidden" name="current_dir_context" value="">
+</form>
+
+<div class="container">
+    
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><i class="fas fa-edit" style="margin-right:8px; color:var(--primary)"></i> Code Editor</div>
+            <span onclick="document.getElementById('fileUpload').click()" style="font-size:13px; color:var(--text-sub); cursor:pointer; display:flex; align-items:center; gap:5px; transition:color 0.2s">
+                <i class="fas fa-cloud-upload-alt"></i> Upload File
+            </span>
+            <input type="file" id="fileUpload" style="display:none" onchange="loadFile(this)">
+        </div>
+        <div class="card-body">
+            <form method="POST" id="editorForm">
+                <input type="hidden" name="action" value="save">
+                <input type="hidden" name="origin_name" id="originNameInput">
+                <input type="hidden" name="guest_id" id="guestIdInput">
+                <input type="hidden" name="current_dir_context" value="">
+
+                <div class="toolbar">
+                                            <input type="hidden" name="key" id="guestKeyInputDisplay">
+                        <div style="flex:3;">
+                            <input type="text" disabled="" placeholder="Filename will be random (Guest Mode)" style="opacity:0.5; cursor:not-allowed">
+                        </div>
+                    
+                    <div style="flex:1; min-width: 120px;" id="presetContainer">
+                        <div class="styled-select-wrapper">
+                            <select id="obfPreset">
+                                <optgroup label="General">
+                                    <option value="Minify">Minify</option>
+                                    <option value="Luamin">Luamin</option>
+                                    <option value="Format">Format</option>
+                                    <option value="Beautify">Beautify</option>
+                                    <option value="Env Logger">Env Logger</option>
+                                </optgroup>
+                                <optgroup label="All Sizes">
+                                    <option value="Me">Obf Me</option>
+                                    <option value="Flow">Obf Flow</option>
+                                    <option value="Evil">Evil</option>
+                                    <option value="Abyss">Abyss</option>
+                                    <option value="Abyss2">Abyss2</option>
+                                    <option value="Hex">Hex</option>
+                                    <option value="Weak">Obf Weak</option>
+                                    <option value="Light">Obf Li</option>
+                                    <option value="Ps">Obf Ps</option>
+                                    <option value="Rz">Obf Rz</option>
+                                    <option value="R2">Obf R2</option>
+                                    <option value="Veil">Veil</option>
+                                    <option value="L1">Obf L1</option>
+                                    <option value="L2">Obf L2</option>
+                                    <option value="Ib1">Ib1</option>
+                                    <option value="Ib2">Ib2</option>
+                                    <option value="Ib3">Ib3</option>
+                                </optgroup>
+                                <optgroup label="Limit Under 300Kb">
+                                    <option value="Lightrew">Lightrew</option>
+                                    <option value="Wrd">Wrd</option>
+                                    <option value="Ibv">Ibv</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="M1">M1</option>
+                                    <option value="M2">M2</option>
+                                    <option value="M3">M3</option>
+                                    <option value="Basic">Basic</option>
+                                    <option value="Normal">Normal</option>
+                                    <option value="Ibs">Ibs</option>
+                                </optgroup>
+                                <optgroup label="Limit Under 100Kb">
+                                    <option value="Hard">Hard</option>
+                                    <option value="Strong">Strong</option>
+                                    <option value="Env">Env</option>
+                                    <option value="MaxSecurity">Hidden</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="action-group">
+                                                <div class="guest-limit-box" title="Guest Daily Limit">
+                            <div class="guest-limit-text">Daily Limit: <span id="guestLimitCount">5</span>/5</div>
+                            <div class="guest-limit-bar-bg">
+                                <div class="guest-limit-bar" id="guestLimitBar" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                                                
+                        <button type="button" class="btn btn-secondary" onclick="runObfuscate()" title="Obfuscate via Bot" id="btnObf">
+                            <i class="fas fa-magic" style="color:#d946ef"></i> Obf
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="confirmSave()">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                    </div>
+                </div>
+                <textarea name="content" id="fileContent" placeholder="Paste your Lua script here..." required="" spellcheck="false"></textarea>
+            </form>
+        </div>
+    </div>
+
+    </div>
+
+<script>
+    const fileData = [];
+    const scriptBase = "";
+    const isLoggedIn = false;
+
+    function toggleSidebar() {
+        document.querySelector('.sidebar').classList.toggle('active');
+        document.querySelector('.sidebar-overlay').classList.toggle('active');
+    }
+
+    function formatSize(bytes) {
+        if (bytes === undefined || bytes === null) return '-';
+        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';
+        if (bytes >= 1048576) return (bytes / 1048576).toFixed(2) + ' MB';
+        if (bytes >= 1024) return (bytes / 1024).toFixed(2) + ' KB';
+        return bytes + ' B';
+    }
+
+    function timeAgo(timestamp) {
+        if (!timestamp) return '';
+        const seconds = Math.floor((new Date() - timestamp * 1000) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + "y ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + "mo ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + "d ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + "h ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + "m ago";
+        return "Just now";
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('fileListBody');
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-sub)"><i class="fas fa-box-open" style="font-size:24px; display:block; margin-bottom:10px; opacity:0.5"></i>Empty Directory</td></tr>';
+            return;
+        }
+        data.forEach(item => {
+            let tr = document.createElement('tr');
+            let iconHtml = item.type === 'folder' ? '<i class="fas fa-folder"></i>' : '<i class="fas fa-file-code"></i>';
+            let nameHtml = '';
+            if (item.type === 'folder') {
+                nameHtml = `<a href="${scriptBase}/repo/${item.path}" class="folder-link">${item.name}</a>`;
+            } else {
+                let dName = item.display_name.split('/').pop();
+                nameHtml = `<span style="font-family:'JetBrains Mono'; color:#e4e4e7; font-weight:500">${dName}</span>`;
+            }
+            let sizeHtml = item.type === 'file' ? formatSize(item.size) : '';
+            
+            // Hide views column for folders
+            let viewsHtml = '';
+            let viewsClass = 'col-views';
+            if (item.type === 'folder') {
+                viewsHtml = ''; 
+                viewsClass += ' mobile-hide'; // hide on mobile
+            } else {
+                let vCount = item.views ? item.views : 0;
+                viewsHtml = `<i class="fas fa-eye" style="margin-right:4px; opacity:0.6"></i> ${vCount}`;
+            }
+
+            let statusHtml = '';
+            if (item.type === 'folder') {
+                statusHtml = '<span style="font-size:12px; color:var(--text-sub); opacity:0.5">Folder</span>';
+            } else {
+                if (item.privacy === 'private') {
+                    statusHtml = '<span class="status-badge status-private"><i class="fas fa-lock" style="font-size:10px"></i> Private</span>';
+                } else {
+                    statusHtml = '<span class="status-badge status-public">Public</span>';
+                }
+                statusHtml += ' <span class="col-size">' + sizeHtml + '</span>';
+            }
+            let timeHtml = '';
+            if (item.type === 'folder') {
+                timeHtml = '<span style="color:var(--text-sub); font-size:12px;">-</span>';
+            } else if (item.expire == 0) {
+                timeHtml = '<span class="perm">Never</span>';
+            } else {
+                timeHtml = `<span class="countdown" data-expire="${item.expire}">...</span>`;
+            }
+            let linkHtml = '';
+            if (item.type === 'file') {
+                linkHtml = `<button class="btn-icon" title="Copy Raw Link" onclick="copyText('${item.url}')"><i class="fas fa-link"></i></button>`;
+            }
+            let actionHtml = '';
+            let toggleHtml = '';
+            if (item.type === 'folder') {
+                if (isLoggedIn) {
+                    let safePath = item.path.replace(/'/g, "\\'");
+                    let safeName = item.name.replace(/'/g, "\\'");
+                    actionHtml = `<button type="button" class="btn-icon" title="Rename Folder" onclick="openFolderRenameModal('${safePath}', '${safeName}')"><i class="fas fa-pen"></i></button> <button type="button" class="btn-icon" title="Delete Folder" onclick="confirmDeleteFolder('${safePath}')" style="color:#ef4444"><i class="fas fa-trash"></i></button>`;
+                }
+            } else if (item.type === 'file') {
+                if (isLoggedIn) {
+                    let isChecked = item.active ? 'checked' : '';
+                    toggleHtml = `
+                        <label class="switch" title="Toggle Raw Access">
+                            <input type="checkbox" ${isChecked} onchange="toggleFile('${item.key}', this)">
+                            <span class="slider"></span>
+                        </label>
+                    `;
+                    
+                    if (item.display_name.toLowerCase().endsWith('.html')) {
+                        let isRenderChecked = item.html_render ? 'checked' : '';
+                        toggleHtml += `
+                            <div style="display:inline-block; text-align:center; vertical-align:middle; margin-left:8px">
+                                <label class="switch" title="Toggle HTML Preview">
+                                    <input type="checkbox" ${isRenderChecked} onchange="toggleHtmlRender('${item.key}', this)">
+                                    <span class="slider blue"></span>
+                                </label>
+                                <div style="font-size:9px; color:#3b82f6; margin-top:2px; font-weight:600">Web Mode</div>
+                            </div>
+                        `;
+                    }
+                }
+                actionHtml += `<a href="${item.url}" target="_blank" class="btn-icon" title="View Raw"><i class="fas fa-external-link-alt"></i></a> `;
+                if (isLoggedIn) {
+                    let safeDisplay = item.display_name.replace(/'/g, "\\'");
+                    let safeUrl = item.url.replace(/'/g, "\\'");
+                    let priv = item.privacy || 'public';
+                    let dur = item.duration || 0;
+                    let isActive = item.active !== false; 
+                    actionHtml += `<button type="button" class="btn-icon" title="Edit" onclick="editFile('${safeDisplay}', '${safeUrl}', '${priv}', '${dur}', ${isActive})"><i class="fas fa-pen"></i></button> `;
+                }
+                actionHtml += `<button type="button" class="btn-icon" title="Delete" onclick="confirmDelete('${item.key}')" style="color:#ef4444"><i class="fas fa-trash"></i></button>`;
+            }
+            let createdTimeStr = timeAgo(item.created);
+            let mobileUploadTime = `<div class="mobile-upload-time">${createdTimeStr}</div>`;
+            let desktopToggle = isLoggedIn && item.type === 'file' ? toggleHtml : '';
+            let actionTdClass = item.type === 'folder' ? 'col-action folder-action-cell' : 'col-action';
+            tr.innerHTML = `
+                ${mobileUploadTime}
+                <td class="col-icon">${iconHtml}</td>
+                <td class="col-name">${nameHtml}</td>
+                <td class="${viewsClass}">${viewsHtml}</td>
+                <td class="col-status">${statusHtml}</td>
+                <td class="col-time">${timeHtml}</td>
+                <td class="col-link" style="text-align:center">${desktopToggle} ${linkHtml}</td>
+                <td class="${actionTdClass}">${actionHtml}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        updateCountdowns();
+    }
+
+    function sortFiles(criteria) {
+        document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('sort-' + criteria).classList.add('active');
+        fileData.sort((a, b) => {
+            if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+            if (criteria === 'newest') {
+                return b.created - a.created;
+            } else if (criteria === 'name_asc') {
+                let nA = a.display_name || a.name;
+                let nB = b.display_name || b.name;
+                return nA.localeCompare(nB);
+            } else if (criteria === 'size_desc') {
+                return (b.size || 0) - (a.size || 0);
+            }
+            return 0;
+        });
+        renderTable(fileData);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderTable(fileData);
+            });
+
+    function handleAuth(e, form) {
+        e.preventDefault();
+        const btn = form.querySelector('button');
+        const oldText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        btn.disabled = true;
+        const formData = new FormData(form);
+        formData.append('ajax_mode', '1');
+        fetch(window.location.href, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    window.location.reload();
+                } else {
+                    const alertDiv = form.previousElementSibling; 
+                    alertDiv.className = 'alert error active';
+                    alertDiv.innerText = res.msg;
+                    btn.innerHTML = oldText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(err => {
+                const alertDiv = form.previousElementSibling; 
+                alertDiv.className = 'alert error active';
+                alertDiv.innerText = "Network error";
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+            });
+    }
+
+    function handleGenerateToken(e, form) {
+        e.preventDefault();
+        const btn = form.querySelector('button');
+        const oldIcon = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        const formData = new FormData(form);
+        formData.append('ajax_mode', '1');
+        fetch(window.location.href, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                btn.innerHTML = oldIcon;
+                btn.disabled = false;
+                if(res.status === 'success') {
+                    document.getElementById('apiTokenInput').value = res.token;
+                    document.querySelectorAll('.token-ph').forEach(el => el.innerText = res.token);
+                    const alertDiv = document.getElementById('settingsAlert');
+                    alertDiv.className = 'alert success active';
+                    alertDiv.innerText = res.msg;
+                    setTimeout(() => { alertDiv.className = 'alert'; }, 3000);
+                } else {
+                    alert('Error: ' + res.msg);
+                }
+            })
+            .catch(err => {
+                btn.innerHTML = oldIcon;
+                btn.disabled = false;
+                alert('Network Error');
+            });
+    }
+
+    function toggleFile(key, checkbox) {
+        const formData = new FormData();
+        formData.append('action', 'toggle_status');
+        formData.append('key', key);
+        formData.append('ajax_mode', '1');
+        fetch(window.location.href, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if(res.status !== 'success') {
+                    alert('Error toggling file status');
+                    checkbox.checked = !checkbox.checked; 
+                }
+            })
+            .catch(err => {
+                alert('Network error');
+                checkbox.checked = !checkbox.checked;
+            });
+    }
+
+    function toggleHtmlRender(key, checkbox) {
+        const formData = new FormData();
+        formData.append('action', 'toggle_html_render');
+        formData.append('key', key);
+        formData.append('ajax_mode', '1');
+        fetch(window.location.href, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if(res.status !== 'success') {
+                    alert('Error toggling HTML render');
+                    checkbox.checked = !checkbox.checked; 
+                }
+            })
+            .catch(err => {
+                alert('Network error');
+                checkbox.checked = !checkbox.checked;
+            });
+    }
+
+    function copyText(text) {
+        const temp = document.createElement("textarea");
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        const btn = event.currentTarget;
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check" style="color:var(--green)"></i>';
+        setTimeout(() => btn.innerHTML = original, 1000);
+    }
+
+    function copyCode(btn) {
+        const content = btn.parentElement.nextElementSibling.innerText;
+        const temp = document.createElement("textarea");
+        temp.value = content;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        
+        const originalText = btn.innerText;
+        btn.innerText = "Copied!";
+        btn.style.color = "#22c55e";
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.color = "";
+        }, 1500);
+    }
+
+    function updateCountdowns() {
+        const now = Math.floor(Date.now() / 1000);
+        document.querySelectorAll('.countdown').forEach(el => {
+            const expire = parseInt(el.getAttribute('data-expire'));
+            let diff = expire - now;
+            if (diff <= 0) { el.innerText = "Expired"; el.style.color = "#ef4444"; el.style.background = "rgba(239, 68, 68, 0.1)"; return; }
+            const h = Math.floor(diff / 3600).toString().padStart(2,'0');
+            const m = Math.floor((diff % 3600) / 60).toString().padStart(2,'0');
+            const s = (diff % 60).toString().padStart(2,'0');
+            el.innerText = `${h}:${m}:${s}`;
+        });
+    }
+    updateCountdowns(); setInterval(updateCountdowns, 1000);
+
+    function runObfuscate() {
+        const content = document.getElementById('fileContent').value;
+        if (!content.trim()) return alert("Content cannot be empty!");
+        const btn = event.currentTarget;
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+        btn.disabled = true;
+        
+        const fd = new FormData();
+        fd.append('action', 'create_obf');
+        fd.append('content', content);
+        fd.append('preset', document.getElementById('obfPreset').value);
+        fd.append('ajax_mode', '1');
+        
+        // Get filename from input
+        const fileNameInput = document.getElementById('fileNameInput');
+        if (fileNameInput && fileNameInput.value) {
+            fd.append('filename', fileNameInput.value);
+        }
+        
+        fetch(window.location.href, { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    if (res.remaining_guest !== -1) {
+                         const bar = document.getElementById('guestLimitBar');
+                         const count = document.getElementById('guestLimitCount');
+                         if(bar && count) {
+                             bar.style.width = (res.remaining_guest / 5 * 100) + '%';
+                             count.innerText = res.remaining_guest;
+                         }
+                    }
+                    document.getElementById('fileContent').value = res.result;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Done';
+                    setTimeout(() => { btn.innerHTML = oldHtml; btn.disabled = false; }, 2000);
+                } else {
+                    alert('Error: ' + res.msg);
+                    btn.innerHTML = oldHtml;
+                    btn.disabled = false;
+                }
+            })
+            .catch(e => {
+                alert('Network Error');
+                btn.innerHTML = oldHtml;
+                btn.disabled = false;
+            });
+    }
+
+    function openModal(id) { document.getElementById(id+'Modal').classList.add('active'); }
+    function closeModal(id) { document.getElementById(id+'Modal').classList.remove('active'); }
+    function switchModal(c, o) { 
+        closeModal(c); 
+        document.getElementById(c+'Alert').className = 'alert';
+        setTimeout(()=>openModal(o), 300); 
+    }
+    window.onclick = e => { if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('active'); };
+
+    function confirmSave() {
+        if (!document.getElementById('fileContent').value.trim()) return alert("Content cannot be empty!");
+        const m = document.getElementById('confirmModal');
+        document.getElementById('confirmTitle').innerText = "Save File";
+        document.getElementById('confirmText').innerText = "Do you want to save this file?";
+        const b = document.getElementById('confirmBtnAction'); b.className = "btn btn-primary"; b.innerText="Save Now";
+        b.onclick = () => {
+            b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            document.getElementById('editorForm').submit();
+        };
+        openModal('confirm');
+    }
+
+    function confirmDelete(key) {
+        document.getElementById('confirmTitle').innerText = "Delete File";
+        document.getElementById('confirmText').innerText = "This action cannot be undone. Are you sure?";
+        const b = document.getElementById('confirmBtnAction'); b.className = "btn btn-danger"; b.innerText="Delete Forever";
+        b.onclick = () => { 
+            b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            document.getElementById('deleteKeyInput').value=key; 
+            document.getElementById('deleteForm').submit(); 
+        };
+        openModal('confirm');
+    }
+
+    function loadFile(i) {
+        if(i.files[0]) {
+            let fname = i.files[0].name;
+            if(document.getElementById('fileNameInput')) {
+                const currentVal = document.getElementById('fileNameInput').value;
+                const lastSlash = currentVal.lastIndexOf('/');
+                const prefix = lastSlash !== -1 ? currentVal.substring(0, lastSlash + 1) : '';
+                document.getElementById('fileNameInput').value = prefix + fname;
+            }
+            toggleObf(fname);
+            const r = new FileReader(); r.onload = e => document.getElementById('fileContent').value = e.target.result; r.readAsText(i.files[0]);
+        }
+    }
+
+    function toggleObf(name) {
+        if(!name) return;
+        let isHtml = name.toLowerCase().endsWith('.html') || name.toLowerCase().endsWith('.htm');
+        let btn = document.getElementById('btnObf');
+        let pre = document.getElementById('presetContainer');
+        if(isHtml) {
+            if(btn) btn.style.display = 'none';
+            if(pre) pre.style.visibility = 'hidden'; 
+        } else {
+            if(btn) btn.style.display = '';
+            if(pre) pre.style.visibility = 'visible';
+        }
+    }
+    
+    let nameInput = document.getElementById('fileNameInput');
+    if(nameInput) {
+        nameInput.addEventListener('input', function() {
+            toggleObf(this.value);
+        });
+    }
+
+    function editFile(displayName, url, priv, dur, isActive) {
+        if(document.getElementById('fileNameInput')) {
+            document.getElementById('fileNameInput').value = displayName;
+            document.getElementById('originNameInput').value = displayName;
+        }
+        toggleObf(displayName);
+        if (priv === 'private') document.getElementById('priv_private').checked = true;
+        else document.getElementById('priv_public').checked = true;
+        if (document.getElementById('expireSelect')) document.getElementById('expireSelect').value = dur;
+        
+        if (!isActive) {
+            document.getElementById('fileContent').value = "-- [SYSTEM] Raw Access is currently DISABLED.\n-- Enable it in the file list below to view or edit the content.";
+            window.scrollTo({top:0, behavior:'smooth'});
+            return;
+        }
+
+        const btn = event.currentTarget;
+        const originalIcon = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        fetch(url).then(r => {
+            if(r.status === 403) return "-- Raw Access Denied or Disabled";
+            return r.text();
+        }).then(t => { 
+            document.getElementById('fileContent').value = t; 
+            window.scrollTo({top:0, behavior:'smooth'});
+            btn.innerHTML = originalIcon;
+        }).catch(err => {
+             document.getElementById('fileContent').value = "-- Error loading file";
+             btn.innerHTML = originalIcon;
+        });
+    }
+
+    function copyToClipboard(el) {
+        el.select(); document.execCommand('copy');
+        const old = el.value; el.value = "Copied!"; el.style.color = "#22c55e";
+        setTimeout(() => { el.value = old; el.style.color = ""; }, 1000);
+    }
+
+    let currentFolderPath = '';
+
+    function openFolderRenameModal(path, name) {
+        currentFolderPath = path;
+        document.getElementById('folderNewNameInput').value = name;
+        const btn = document.getElementById('folderRenameContinueBtn');
+        btn.innerHTML = 'Continue';
+        btn.disabled = false;
+        openModal('folderRename');
+    }
+
+    function submitRenameFolder() {
+        const newName = document.getElementById('folderNewNameInput').value.trim().replace(/[^a-zA-Z0-9_.\-]/g, '');
+        if (!newName) return alert('Please enter a valid folder name.');
+        const btn = document.getElementById('folderRenameContinueBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        const formData = new FormData();
+        formData.append('action', 'rename_folder');
+        formData.append('old_path', currentFolderPath);
+        formData.append('new_name', newName);
+        formData.append('ajax_mode', '1');
+        fetch(window.location.href, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    closeModal('folderRename');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + res.msg);
+                    btn.innerHTML = 'Continue';
+                    btn.disabled = false;
+                }
+            })
+            .catch(() => {
+                alert('Network error');
+                btn.innerHTML = 'Continue';
+                btn.disabled = false;
+            });
+    }
+
+    function confirmDeleteFolder(path) {
+        document.getElementById('confirmTitle').innerText = "Delete Folder";
+        document.getElementById('confirmText').innerText = "This will permanently delete the folder and ALL files inside it. This action cannot be undone.";
+        const b = document.getElementById('confirmBtnAction');
+        b.className = "btn btn-danger";
+        b.innerText = "Delete Forever";
+        b.disabled = false;
+        b.onclick = () => {
+            b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            b.disabled = true;
+            const formData = new FormData();
+            formData.append('action', 'delete_folder');
+            formData.append('folder_path', path);
+            formData.append('ajax_mode', '1');
+            fetch(window.location.href, { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        closeModal('confirm');
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + res.msg);
+                        b.innerHTML = 'Delete Forever';
+                        b.disabled = false;
+                    }
+                })
+                .catch(() => {
+                    alert('Network error');
+                    b.innerHTML = 'Delete Forever';
+                    b.disabled = false;
+                });
+        };
+        openModal('confirm');
+    }
+</script>
+
+</body></html>
